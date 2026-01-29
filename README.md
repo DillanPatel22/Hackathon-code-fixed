@@ -1,124 +1,119 @@
 # FlowCell - Laboratory Inventory Management System
 
-A microservices-based inventory management system for laboratory materials, featuring real-time order tracking, admin management portal, and WebSocket-powered notifications.
+A microservices-based laboratory inventory management system with real-time order tracking and low-stock alerts.
+
+## Features
+
+### Core Features
+- **User Authentication**: JWT-based authentication with role-based access (Admin/User)
+- **Product Search**: Search 50+ lab materials with real-time autocomplete
+- **Order Management**: Create, track, and manage orders with status updates
+- **Admin Portal**: Comprehensive dashboard for order management
+
+### New Features (Hackathon Addition)
+- **Product Database**: 50 lab materials across 5 categories (Glassware, Chemicals, Equipment, Consumables, Safety)
+- **Stock Tracking**: Real-time inventory levels with automatic stock decrement on order acceptance
+- **Low-Stock Alerts**: Visual alerts in Admin Portal when products fall below threshold
+- **Real-Time Updates**: WebSocket-powered notifications for order and stock changes
 
 ## Architecture
 
-The system consists of three main components:
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   React Frontend │────│   Auth Service   │────│  MySQL (auth_db) │
+│   (Port 3000)    │    │   (Port 7000)    │    │                  │
+└────────┬─────────┘    └─────────────────┘    └─────────────────┘
+         │
+         │              ┌─────────────────┐     ┌─────────────────┐
+         └──────────────│ Inventory Service│────│ MySQL (order_db) │
+                        │   (Port 8000)    │    │                  │
+                        └─────────────────┘    └─────────────────┘
+```
 
-1. **Auth Microservice** (Port 7000) - Handles user authentication with JWT tokens
-2. **Inventory Backend** (Port 8000) - Manages orders and inventory with WebSocket support
-3. **React Frontend** (Port 3000) - User interface for ordering and admin management
+## Quick Start (Windows)
 
-## Prerequisites
-
+### Prerequisites
 - Python 3.11+
-- Node.js 18+ with pnpm
-- MySQL 8.0+
+- Node.js 18+
+- MySQL 8.0
 
-## Database Setup
-
-### 1. Install MySQL
-```bash
-sudo apt-get update
-sudo apt-get install -y mysql-server
-sudo service mysql start
+### Step 1: Clone Repository
+```cmd
+git clone https://github.com/DillanPatel22/Hackathon-code-fixed.git
+cd Hackathon-code-fixed
 ```
 
-### 2. Create Databases
-```bash
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS auth_db;"
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS order_db;"
+### Step 2: Setup MySQL
+Open MySQL Command Line Client and run:
+```sql
+CREATE DATABASE auth_db;
+CREATE DATABASE order_db;
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '95402sahil';
+FLUSH PRIVILEGES;
+EXIT;
 ```
 
-### 3. Configure MySQL User
-```bash
-sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '95402sahil';"
-sudo mysql -e "FLUSH PRIVILEGES;"
-```
-
-> **Note:** Change the password in the settings files if you use a different password.
-
-## Backend Setup
-
-### Auth Microservice
-
-```bash
+### Step 3: Setup Auth Service (Terminal 1)
+```cmd
 cd Auth_MS
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver 0.0.0.0:7000
 ```
 
-### Inventory Backend
-
-```bash
+### Step 4: Setup Inventory Service (Terminal 2)
+```cmd
 cd Backend_Inventory
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
-python manage.py makemigrations inventory
 python manage.py migrate
+python manage.py populate_products
 daphne -b 0.0.0.0 -p 8000 inventory_proj.asgi:application
 ```
 
-## Frontend Setup
-
-```bash
+### Step 5: Setup Frontend (Terminal 3)
+```cmd
 cd Hackathon_Frontend
-pnpm install
 ```
 
-### Environment Configuration
-
-Create a `.env` file in the `Hackathon_Frontend` directory:
-
-```env
+Create `.env` file with:
+```
 REACT_APP_AUTH_URL=http://127.0.0.1:7000/api/auth/
 REACT_APP_INVENTORY_URL=http://127.0.0.1:8000/api/
 REACT_APP_WS_URL=ws://127.0.0.1:8000
 ```
 
-For production/external access, update these URLs accordingly.
-
-### Start Frontend
-
-```bash
+Then run:
+```cmd
+pnpm install
 pnpm start
 ```
 
-## Creating an Admin User
-
-### Option 1: Via API (with manual database update)
-```bash
-# Register user
-curl -X POST http://127.0.0.1:7000/api/auth/register/ \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","email":"admin@example.com","password":"YourPassword123!"}'
-
-# Set admin privileges in database
-mysql -u root -p'95402sahil' auth_db -e "UPDATE auth_user SET is_staff=1, is_superuser=1 WHERE username='admin';"
-```
-
-### Option 2: Django Admin
-```bash
-cd Auth_MS
-python manage.py createsuperuser
+### Step 6: Create Admin User
+1. Register a user through the app at http://localhost:3000
+2. Open MySQL and make them admin:
+```sql
+USE auth_db;
+UPDATE auth_user SET is_staff=1, is_superuser=1 WHERE username='YourUsername';
 ```
 
 ## API Endpoints
 
 ### Auth Service (Port 7000)
-
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/auth/register/` | Register new user |
-| POST | `/api/auth/login/` | Login and get JWT tokens |
-| GET | `/api/auth/me/` | Get current user profile |
+| POST | `/api/auth/login/` | Login and get JWT token |
 
 ### Inventory Service (Port 8000)
-
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/products/search/` | Search products |
+| GET | `/api/products/` | List all products |
+| GET | `/api/products/search/?search=query` | Search products |
+| GET | `/api/products/low-stock/` | Get low-stock products |
 | POST | `/api/orders/` | Create new order |
 | GET | `/api/orders/user/` | Get user's orders |
 | GET | `/api/admin/orders/` | Get all orders (admin) |
@@ -126,24 +121,20 @@ python manage.py createsuperuser
 | POST | `/api/admin/orders/{id}/cancel/` | Cancel order (admin) |
 
 ### WebSocket Endpoints
+| Endpoint | Description |
+|----------|-------------|
+| `/ws/orders/{username}/` | User order status updates |
+| `/ws/admin/orders/` | Admin order and low-stock notifications |
 
-- `/ws/orders/{username}/` - User order status updates
-- `/ws/admin/orders/` - Admin order notifications
+## Product Categories
 
-## Features
-
-### User Features
-- ✅ User registration and login
-- ✅ Product search with autocomplete
-- ✅ Create orders with multiple items
-- ✅ View order history
-- ✅ Real-time order status updates
-
-### Admin Features
-- ✅ View all orders dashboard
-- ✅ Accept/Cancel pending orders
-- ✅ Order statistics (Pending, Processing, Completed)
-- ✅ Real-time order notifications
+| Category | Example Items |
+|----------|---------------|
+| Glassware | Beakers, Flasks, Test Tubes, Pipettes, Graduated Cylinders |
+| Chemicals | Ethanol, Sodium Chloride, Hydrochloric Acid, Sodium Hydroxide |
+| Equipment | Microscopes, Centrifuges, Bunsen Burners, Hot Plates, Scales |
+| Consumables | Petri Dishes, Filter Paper, Syringes, Gloves, Pipette Tips |
+| Safety | Safety Goggles, Lab Coats, Face Shields, First Aid Kits |
 
 ## Project Structure
 
@@ -156,39 +147,49 @@ python manage.py createsuperuser
 ├── Backend_Inventory/          # Inventory management service
 │   ├── inventory_proj/         # Django project settings
 │   ├── inventory/              # Inventory app
-│   │   ├── models.py           # Order model
-│   │   ├── views.py            # API views
+│   │   ├── models.py           # Product and Order models
+│   │   ├── views.py            # API views with stock tracking
 │   │   ├── serializers.py      # DRF serializers
 │   │   ├── consumer.py         # Order processing consumer
-│   │   └── websocket_consumer.py # WebSocket handlers
+│   │   ├── websocket_consumer.py # WebSocket handlers
+│   │   └── management/commands/populate_products.py  # Product seeder
 │   └── requirements.txt
 │
 └── Hackathon_Frontend/         # React frontend
     ├── src/
     │   ├── App.jsx             # Main app with routing
     │   ├── Auth.jsx            # Login/Register component
-    │   ├── Inventory.jsx       # User inventory page
-    │   ├── AdminPortal.jsx     # Admin management portal
+    │   ├── Inventory.jsx       # User inventory page with product search
+    │   ├── AdminPortal.jsx     # Admin portal with low-stock alerts
     │   ├── api.js              # Inventory API client
     │   └── authApi.js          # Auth API client
     └── package.json
 ```
 
-## Fixes Applied
+## Troubleshooting
 
-1. **Database Configuration** - Added MySQL setup instructions
-2. **CORS Configuration** - Enabled CORS for all origins in development
-3. **ALLOWED_HOSTS** - Set to allow all hosts for development
-4. **CORS Middleware Order** - Fixed middleware ordering (CORS first)
-5. **Username Display** - Added username field to order serializer for Admin Portal
-6. **Environment Variables** - Added support for configurable API URLs
-7. **WebSocket URLs** - Made WebSocket URLs configurable via environment variables
+### MySQL Connection Issues
+- Verify MySQL is running (check Services on Windows)
+- Check password in `settings.py` matches your MySQL root password
 
-## Known Limitations
+### "mysqlclient" Installation Fails on Windows
+Install Visual C++ Build Tools from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
-1. Products are hardcoded (no Product model in database)
-2. No stock tracking system
-3. Admin privileges must be set manually in database
+### Port Already in Use
+```cmd
+netstat -ano | findstr :7000
+taskkill /PID <PID> /F
+```
+
+## Fixes Applied in This Version
+
+1. ✅ Database Configuration - MySQL setup with proper authentication
+2. ✅ CORS Configuration - Enabled for all origins in development
+3. ✅ ALLOWED_HOSTS - Set to allow all hosts
+4. ✅ Username Display - Fixed in Admin Portal order table
+5. ✅ Product Database - 50 lab materials with stock tracking
+6. ✅ Low-Stock Alerts - Real-time alerts in Admin Portal
+7. ✅ Stock Decrement - Automatic stock reduction on order acceptance
 
 ## License
 
