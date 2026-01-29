@@ -1,5 +1,5 @@
 import React from 'react'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import InventoryApi from  './api';
 import './Inventory.css';
 
@@ -363,6 +363,7 @@ function InlineProductSearch({ rowId, value, onProductSelect }) {
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
+    const debounceTimerRef = useRef(null);  // NEW: Ref to store debounce timer
     const inventoryClass = new InventoryApi();
 
     // Update searchTerm when value prop changes
@@ -382,22 +383,52 @@ function InlineProductSearch({ rowId, value, onProductSelect }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleInputChange = async (e) => {
+    // NEW: Cleanup debounce timer on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, []);
+
+    // NEW: Debounced search function
+    const performSearch = useCallback(async (searchValue) => {
+        if (!searchValue || searchValue.length < 2) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            setIsSearching(false);
+            return;
+        }
+
+        try {
+            const result = await inventoryClass.searchItems(searchValue);
+            setSearchResults(result);
+            setShowDropdown(true);
+            setSelectedIndex(-1);
+        } catch (error) {
+            console.error("Error searching the product: ", error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    }, []);
+
+    // NEW: Handle input change with debouncing (300ms delay)
+    const handleInputChange = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
         setIsSearching(true);
 
-        try {
-            const result = await inventoryClass.searchItems(value);
-            setSearchResults(result);
-            setShowDropdown(true);
-            setSelectedIndex(-1);
-        }catch(error) {
-            console.error("Error searching the product: ", error);
-            setSearchResults([]);
-        }finally{
-            setIsSearching(false);
+        // Clear any existing timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
+
+        // Set new timer - only search after 300ms of no typing
+        debounceTimerRef.current = setTimeout(() => {
+            performSearch(value);
+        }, 300);
     };
 
     const handleProductClick = (product) => {
