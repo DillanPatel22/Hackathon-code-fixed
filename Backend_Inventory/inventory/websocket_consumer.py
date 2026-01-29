@@ -62,3 +62,13 @@ class AdminOrderConsumer(AsyncWebsocketConsumer):
             'type': 'order_update',
             'data': message
         }))
+
+    # Handle low stock alerts
+    async def low_stock_alert(self, event):
+        message = event['message']
+
+        # Send low stock alert to WebSocket
+        await self.send(text_data=json.dumps({
+            'type': 'low_stock_alert',
+            'data': message
+        }))

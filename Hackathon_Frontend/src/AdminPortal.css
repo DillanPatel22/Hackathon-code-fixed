@@ -416,3 +416,173 @@
         width: 100%;
     }
 }
+
+/* Low Stock Panel */
+.low-stock-panel {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px solid #f59e0b;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
+    animation: fadeIn 0.6s ease;
+}
+
+.low-stock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    background: rgba(245, 158, 11, 0.1);
+    transition: background 0.2s ease;
+}
+
+.low-stock-header:hover {
+    background: rgba(245, 158, 11, 0.2);
+}
+
+.low-stock-header h3 {
+    margin: 0;
+    color: #92400e;
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.warning-icon {
+    font-size: 1.5rem;
+}
+
+.toggle-icon {
+    color: #92400e;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.low-stock-content {
+    padding: 1.5rem;
+    background: white;
+}
+
+.low-stock-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.low-stock-table thead th {
+    background: #fffbeb;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #92400e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #fde68a;
+}
+
+.low-stock-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #fef3c7;
+}
+
+.low-stock-table tbody tr:hover {
+    background: #fffbeb;
+}
+
+.low-stock-table tbody tr.out-of-stock {
+    background: #fef2f2;
+}
+
+.low-stock-table tbody tr.out-of-stock:hover {
+    background: #fee2e2;
+}
+
+.low-stock-table td {
+    padding: 1rem;
+    color: #4b5563;
+    font-size: 0.95rem;
+}
+
+.low-stock-table .product-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.low-stock-table .category {
+    color: #6b7280;
+}
+
+.low-stock-table .stock-quantity .warning {
+    color: #f59e0b;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.low-stock-table .stock-quantity .critical {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.low-stock-table .threshold {
+    color: #9ca3af;
+}
+
+.stock-status {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.low-stock-badge {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.out-of-stock-badge {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+}
+
+/* Alert Card for Stats Grid */
+.alert-card {
+    border-top: 4px solid #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.alert-card .stat-number {
+    color: #92400e;
+}
+
+.stock-card {
+    border-top: 4px solid #10b981;
+}
+
+/* Responsive adjustments for low stock panel */
+@media (max-width: 768px) {
+    .low-stock-header h3 {
+        font-size: 1rem;
+    }
+    
+    .low-stock-table td,
+    .low-stock-table th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .stock-status {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.5rem;
+    }
+}

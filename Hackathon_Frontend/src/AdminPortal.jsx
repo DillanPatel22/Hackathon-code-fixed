@@ -7,10 +7,12 @@ export default function AdminPortal() {
     const [pendingOrders, setPendingOrders] = useState([]);
     const [processingOrders, setProcessingOrders] = useState([]);
     const [completedOrders, setCompletedOrders] = useState([]);
+    const [lowStockProducts, setLowStockProducts] = useState([]);
     const [ws, setWs] = useState(null);
     const [activeTab, setActiveTab] = useState('pending');
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [showLowStockPanel, setShowLowStockPanel] = useState(true);
 
     const inventoryClass = new InventoryApi();
     const navigate = useNavigate();
@@ -28,8 +30,13 @@ export default function AdminPortal() {
             const data = JSON.parse(event.data);
             if (data.type === 'order_update') {
                 console.log('Order update received:', data.data);
-                // Refresh all orders when an update is received
                 fetchAllOrders();
+                fetchLowStockProducts();
+            }
+            if (data.type === 'low_stock_alert') {
+                console.log('Low stock alert:', data.data);
+                fetchLowStockProducts();
+                setError(`⚠️ Low Stock Alert: ${data.data.product_name} has only ${data.data.remaining_stock} left!`);
             }
         };
 
@@ -50,8 +57,12 @@ export default function AdminPortal() {
 
     useEffect(() => {
         fetchAllOrders();
+        fetchLowStockProducts();
         // Poll for updates every 10 seconds
-        const interval = setInterval(fetchAllOrders, 10000);
+        const interval = setInterval(() => {
+            fetchAllOrders();
+            fetchLowStockProducts();
+        }, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -59,7 +70,6 @@ export default function AdminPortal() {
         try {
             const orders = await inventoryClass.getAllOrdersAdmin();
             if (orders) {
-                // Categorize orders by status
                 setPendingOrders(orders.filter(o => o.status === 'Pending'));
                 setProcessingOrders(orders.filter(o => o.status === 'Processing'));
                 setCompletedOrders(orders.filter(o => o.status === 'Processed' || o.status === 'Cancelled'));
@@ -70,13 +80,32 @@ export default function AdminPortal() {
         }
     };
 
+    const fetchLowStockProducts = async () => {
+        try {
+            const products = await inventoryClass.getLowStockProducts();
+            if (products) {
+                setLowStockProducts(products);
+            }
+        } catch (err) {
+            console.error('Error fetching low stock products:', err);
+        }
+    };
+
     const handleAcceptOrder = async (orderId) => {
         try {
             const result = await inventoryClass.acceptOrder(orderId);
             if (result) {
                 setSuccessMessage(`Order #${orderId} accepted successfully`);
                 setTimeout(() => setSuccessMessage(''), 3000);
+                
+                // Check for low stock alert in response
+                if (result.low_stock_alert) {
+                    const alert = result.low_stock_alert;
+                    setError(`⚠️ Low Stock Alert: ${alert.product_name} has only ${alert.remaining_stock} left!`);
+                }
+                
                 await fetchAllOrders();
+                await fetchLowStockProducts();
             } else {
                 setError('Failed to accept order');
             }
@@ -105,18 +134,13 @@ export default function AdminPortal() {
     };
 
     const handleLogout = () => {
-        // Close WebSocket if open
         if (ws) {
             ws.close();
         }
-
-        // Clear auth data
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('username');
         localStorage.removeItem('isAdmin');
-
-        // Redirect to login
         navigate('/login', { replace: true });
     };
 
@@ -137,6 +161,17 @@ export default function AdminPortal() {
             default:
                 return '#9ca3af';
         }
+    };
+
+    const getCategoryLabel = (category) => {
+        const labels = {
+            'glassware': 'Glassware',
+            'chemicals': 'Chemicals',
+            'equipment': 'Equipment',
+            'consumables': 'Consumables',
+            'safety': 'Safety'
+        };
+        return labels[category] || category;
     };
 
     const renderOrderTable = (orders, showActions = false) => {
@@ -203,18 +238,69 @@ export default function AdminPortal() {
         );
     };
 
+    const renderLowStockPanel = () => {
+        if (lowStockProducts.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="low-stock-panel">
+                <div className="low-stock-header" onClick={() => setShowLowStockPanel(!showLowStockPanel)}>
+                    <h3>
+                        <span className="warning-icon">⚠️</span>
+                        Low Stock Alerts ({lowStockProducts.length})
+                    </h3>
+                    <span className="toggle-icon">{showLowStockPanel ? '▼' : '▶'}</span>
+                </div>
+                {showLowStockPanel && (
+                    <div className="low-stock-content">
+                        <table className="low-stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Threshold</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {lowStockProducts.map((product) => (
+                                    <tr key={product.id} className={product.is_out_of_stock ? 'out-of-stock' : ''}>
+                                        <td className="product-name">{product.name}</td>
+                                        <td className="category">{getCategoryLabel(product.category)}</td>
+                                        <td className="stock-quantity">
+                                            <span className={product.is_out_of_stock ? 'critical' : 'warning'}>
+                                                {product.stock_quantity}
+                                            </span>
+                                        </td>
+                                        <td className="threshold">{product.low_stock_threshold}</td>
+                                        <td>
+                                            <span className={`stock-status ${product.is_out_of_stock ? 'out-of-stock-badge' : 'low-stock-badge'}`}>
+                                                {product.is_out_of_stock ? 'OUT OF STOCK' : 'LOW STOCK'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="admin-portal">
             <div className="admin-header">
-    <div className="admin-header-top">
-        <h1 className="admin-title">Order Management Portal</h1>
-        <button className="logout-btn" onClick={handleLogout}>
-            Logout
-        </button>
-    </div>
-    <div className="admin-subtitle">Review and manage customer orders</div>
-</div>
-
+                <div className="admin-header-top">
+                    <h1 className="admin-title">Order Management Portal</h1>
+                    <button className="logout-btn" onClick={handleLogout}>
+                        Logout
+                    </button>
+                </div>
+                <div className="admin-subtitle">Review and manage customer orders</div>
+            </div>
 
             {error && (
                 <div className="alert alert-error">
@@ -232,6 +318,9 @@ export default function AdminPortal() {
                 </div>
             )}
 
+            {/* Low Stock Alerts Panel */}
+            {renderLowStockPanel()}
+
             <div className="stats-grid">
                 <div className="stat-card pending-card">
                     <div className="stat-number">{pendingOrders.length}</div>
@@ -244,6 +333,10 @@ export default function AdminPortal() {
                 <div className="stat-card completed-card">
                     <div className="stat-number">{completedOrders.length}</div>
                     <div className="stat-label">Completed</div>
+                </div>
+                <div className={`stat-card ${lowStockProducts.length > 0 ? 'alert-card' : 'stock-card'}`}>
+                    <div className="stat-number">{lowStockProducts.length}</div>
+                    <div className="stat-label">Low Stock Items</div>
                 </div>
             </div>
 

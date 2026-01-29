@@ -35,6 +35,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://3000-ixh54l922zkt5mal9glqr-21c24ef0.us2.manus.computer",
+]
+
+# Disable CSRF for API endpoints
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://3000-ixh54l922zkt5mal9glqr-21c24ef0.us2.manus.computer",
 ]
 
 # Allow credentials (if needed for authentication)
@@ -112,10 +120,9 @@ CHANNEL_LAYERS = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',  # optional
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',  # ensures logged-in access
+        'rest_framework.permissions.IsAuthenticated',
     ),
 }
 

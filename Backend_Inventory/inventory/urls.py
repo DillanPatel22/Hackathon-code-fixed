@@ -11,6 +11,9 @@ urlpatterns = [
     path('admin/orders/<int:order_id>/accept/', views.accept_order, name='accept_order'),
     path('admin/orders/<int:order_id>/cancel/', views.cancel_order, name='cancel_order'),
 
-    # Product search endpoint
+    # Product endpoints
     path('products/search/', views.searchList, name='search_products'),
+    path('products/', views.get_all_products, name='get_all_products'),
+    path('products/low-stock/', views.get_low_stock_products, name='get_low_stock_products'),
+    path('products/<int:product_id>/stock/', views.update_stock, name='update_stock'),
 ]

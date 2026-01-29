@@ -89,7 +89,8 @@ export default class InventoryApi {
 
             if(response.status === 200){
                 console.log("Order accepted:", response.data);
-                return true;
+                // Return the full response data to check for low stock alerts
+                return response.data;
             }
             return false;
         } catch (error) {
@@ -139,12 +140,80 @@ export default class InventoryApi {
 
             if(response.status === 200){
                 console.log(response.data.message);
-                return response.data.message;  // Returns array of products
+                return response.data.message;  // Returns array of products with price and stock
             }
             return [];
         } catch (error) {
             console.error("Error searching products:", error.response?.data || error.message);
             return [];
+        }
+    }
+
+    // New Product Methods
+    async getAllProducts() {
+        try {
+            const response = await axios.get(
+                this.BASE + "products/", {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                return response.data.products;
+            }
+            return [];
+        } catch (error) {
+            console.error("Error fetching products:", error.response?.data || error.message);
+            return [];
+        }
+    }
+
+    async getLowStockProducts() {
+        try {
+            const response = await axios.get(
+                this.BASE + "products/low-stock/", {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                return response.data.low_stock_products;
+            }
+            return [];
+        } catch (error) {
+            console.error("Error fetching low stock products:", error.response?.data || error.message);
+            return [];
+        }
+    }
+
+    async updateProductStock(productId, newQuantity) {
+        try {
+            const response = await axios.post(
+                this.BASE + `products/${productId}/stock/`,
+                { stock_quantity: newQuantity },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                console.log("Stock updated:", response.data);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error updating stock:", error.response?.data || error.message);
+            return false;
         }
     }
 }
