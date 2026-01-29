@@ -16,4 +16,9 @@ urlpatterns = [
     path('products/', views.get_all_products, name='get_all_products'),
     path('products/low-stock/', views.get_low_stock_products, name='get_low_stock_products'),
     path('products/<int:product_id>/stock/', views.update_stock, name='update_stock'),
+
+    # Analytics endpoints (NEW)
+    path('admin/analytics/sales/', views.get_sales_analytics, name='get_sales_analytics'),
+    path('admin/analytics/popular/', views.get_popular_products, name='get_popular_products'),
+    path('admin/inventory/stock/', views.get_stock_inventory, name='get_stock_inventory'),
 ]

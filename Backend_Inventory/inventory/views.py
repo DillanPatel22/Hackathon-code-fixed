@@ -380,3 +380,121 @@ def update_stock(request, product_id):
             data={"error": "Failed to update stock"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+
+# Analytics Views
+@api_view(["GET"])
+@authentication_classes([JWTAuthenticationWithoutUserDB])
+@permission_classes([IsAuthenticated])
+def get_sales_analytics(request):
+    """Get sales analytics - orders by product"""
+    try:
+        from django.db.models import Sum, Count
+        
+        # Get completed orders grouped by product
+        completed_orders = Order.objects.filter(status="Processed")
+        
+        # Aggregate by item_name
+        sales_by_product = completed_orders.values('item_name').annotate(
+            total_quantity=Sum('item_quantity'),
+            order_count=Count('id')
+        ).order_by('-total_quantity')
+        
+        sales_data = []
+        for item in sales_by_product:
+            sales_data.append({
+                "product": item['item_name'],
+                "total_quantity": item['total_quantity'] or 0,
+                "order_count": item['order_count'] or 0
+            })
+        
+        return Response(data={
+            "sales_by_product": sales_data,
+            "total_orders": completed_orders.count(),
+            "total_items_sold": completed_orders.aggregate(total=Sum('item_quantity'))['total'] or 0
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Error fetching sales analytics: {str(e)}")
+        return Response(
+            data={"error": "Failed to fetch sales analytics"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthenticationWithoutUserDB])
+@permission_classes([IsAuthenticated])
+def get_popular_products(request):
+    """Get most popular products based on order count or quantity"""
+    try:
+        from django.db.models import Sum, Count
+        
+        limit = int(request.GET.get('limit', 10))
+        sort_by = request.GET.get('sort_by', 'orders')  # 'orders' or 'quantity'
+        
+        # Get completed orders grouped by product
+        completed_orders = Order.objects.filter(status="Processed")
+        
+        # Aggregate by item_name
+        if sort_by == 'quantity':
+            popular = completed_orders.values('item_name').annotate(
+                total_quantity=Sum('item_quantity'),
+                order_count=Count('id')
+            ).order_by('-total_quantity')[:limit]
+        else:
+            popular = completed_orders.values('item_name').annotate(
+                total_quantity=Sum('item_quantity'),
+                order_count=Count('id')
+            ).order_by('-order_count')[:limit]
+        
+        popular_products = []
+        for idx, item in enumerate(popular):
+            popular_products.append({
+                "rank": idx + 1,
+                "product": item['item_name'],
+                "total_quantity": item['total_quantity'] or 0,
+                "order_count": item['order_count'] or 0
+            })
+        
+        return Response(data={"popular_products": popular_products}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Error fetching popular products: {str(e)}")
+        return Response(
+            data={"error": "Failed to fetch popular products"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["GET"])
+@authentication_classes([JWTAuthenticationWithoutUserDB])
+@permission_classes([IsAuthenticated])
+def get_stock_inventory(request):
+    """Get full stock inventory with all product details"""
+    try:
+        products = Product.objects.all().order_by('category', 'name')
+        
+        inventory = []
+        for product in products:
+            inventory.append({
+                "id": product.id,
+                "name": product.name,
+                "description": product.description,
+                "category": product.category,
+                "price": float(product.price),
+                "stock_quantity": product.stock_quantity,
+                "low_stock_threshold": product.low_stock_threshold,
+                "is_low_stock": product.is_low_stock,
+                "is_out_of_stock": product.is_out_of_stock
+            })
+        
+        return Response(data={"inventory": inventory}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Error fetching stock inventory: {str(e)}")
+        return Response(
+            data={"error": "Failed to fetch stock inventory"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

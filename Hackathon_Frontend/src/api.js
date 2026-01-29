@@ -216,4 +216,74 @@ export default class InventoryApi {
             return false;
         }
     }
+
+    // NEW: Get sales analytics data
+    async getSalesAnalytics() {
+        try {
+            const response = await axios.get(
+                this.BASE + "admin/analytics/sales/", {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching sales analytics:", error.response?.data || error.message);
+            return null;
+        }
+    }
+
+    // NEW: Get popular products
+    async getPopularProducts(limit = 10, sortBy = 'orders') {
+        try {
+            const response = await axios.get(
+                this.BASE + "admin/analytics/popular/", {
+                    params: {
+                        limit: limit,
+                        sort_by: sortBy
+                    },
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                return response.data.popular_products;
+            }
+            return [];
+        } catch (error) {
+            console.error("Error fetching popular products:", error.response?.data || error.message);
+            return [];
+        }
+    }
+
+    // NEW: Get full stock inventory
+    async getStockInventory() {
+        try {
+            const response = await axios.get(
+                this.BASE + "admin/inventory/stock/", {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        "X-Username": this.username
+                    }
+                }
+            );
+
+            if(response.status === 200){
+                return response.data.inventory;
+            }
+            return [];
+        } catch (error) {
+            console.error("Error fetching stock inventory:", error.response?.data || error.message);
+            return [];
+        }
+    }
 }
