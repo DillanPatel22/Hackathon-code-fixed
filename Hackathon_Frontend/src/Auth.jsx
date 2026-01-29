@@ -15,6 +15,10 @@ export default function Auth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
   const auth = new Authentication();
@@ -200,6 +204,9 @@ export default function Auth() {
       password: '',
       confirmPassword: ''
     });
+    // Reset password visibility when switching pages
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   // return block
@@ -252,15 +259,25 @@ return (
 
             <div className="input-group">
               <label className="input-label">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`input-field ${errors.password ? 'input-error' : ''}`}
-                disabled={loading}
-                autoComplete="current-password"
-              />
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.password ? 'input-error' : ''}`}
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
               {errors.password && (
                 <span className="error-text">{errors.password}</span>
               )}
@@ -319,15 +336,25 @@ return (
 
             <div className="input-group">
               <label className="input-label">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`input-field ${errors.password ? 'input-error' : ''}`}
-                disabled={loading}
-                autoComplete="new-password"
-              />
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.password ? 'input-error' : ''}`}
+                  disabled={loading}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
               {errors.password && (
                 <span className="error-text">{errors.password}</span>
               )}
@@ -338,15 +365,25 @@ return (
 
             <div className="input-group">
               <label className="input-label">Confirm Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`input-field ${errors.confirmPassword ? 'input-error' : ''}`}
-                disabled={loading}
-                autoComplete="new-password"
-              />
+              <div className="password-input-container">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`input-field ${errors.confirmPassword ? 'input-error' : ''}`}
+                  disabled={loading}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <span className="error-text">{errors.confirmPassword}</span>
               )}
